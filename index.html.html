@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US Base Job Tracker (Firebase)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 1050px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { font-size: 24px; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; color: #1a202c; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #4a5568; }
+        input, select { padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #3182ce; box-shadow: 0 0 0 1px #3182ce; }
+        
+        .btn-submit { grid-column: 1 / -1; padding: 12px; background-color: #38a169; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
+        .btn-submit:hover { background-color: #2f855a; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px 10px; text-align: left; vertical-align: middle; }
+        th { background-color: #f7fafc; font-weight: bold; color: #4a5568; }
+        
+        .section-header { 
+            background-color: transparent; font-weight: 700; text-align: left; font-size: 16px; 
+            color: #2d3748; padding: 15px 10px 10px 10px !important; 
+            border-top: none !important; border-left: none !important; border-right: none !important; 
+            border-bottom: 2px solid #cbd5e0 !important;
+        }
+        
+        .spacer-row td { height: 40px; border: none !important; background: transparent; padding: 0; }
+        
+        .status-select { padding: 6px; border-radius: 4px; font-size: 13px; font-weight: bold; border: 1px solid transparent; cursor: pointer; width: 100%; }
+        .status-applied { background-color: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+        .status-qualified { background-color: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
+        .status-x { background-color: #fff5f5; color: #c53030; border-color: #fed7d7; }
+        
+        .btn-delete { padding: 6px 12px; background-color: #e53e3e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background-color 0.2s; }
+        .btn-delete:hover { background-color: #c53030; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>US Base Job Tracker</h1>
+    
+    <form id="jobForm">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="position">Position</label>
+                <input type="text" id="position" required>
+            </div>
+            <div class="form-group">
+                <label for="number">Number</label>
+                <input type="text" id="number" required>
+            </div>
+            <div class="form-group">
+                <label for="grade">Grade</label>
+                <select id="grade" required>
+                    <option value="KGS-5">KGS-5</option>
+                    <option value="KGS-5-6">KGS-5-6</option>
+                    <option value="KGS-5-6-7">KGS-5-6-7</option>
+                    <option value="KGS-5-7-9">KGS-5-7-9</option>
+                    <option value="KGS-7">KGS-7</option>
+                    <option value="KGS-7-8-9">KGS-7-8-9</option>
+                    <option value="KGS-7-9">KGS-7-9</option>
+                    <option value="KGS-7-9-11">KGS-7-9-11</option>
+                    <option value="기타">기타</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="location">Location</label>
+                <select id="location" required>
+                    <option value="평택 (Humphreys)">평택 (Humphreys)</option>
+                    <option value="동두천 (Casey)">동두천 (Casey)</option>
+                    <option value="포천">포천</option>
+                    <option value="파주">파주</option>
+                    <option value="용산">용산</option>
+                    <option value="성남">성남</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="applyDate">지원날짜</label>
+                <input type="date" id="applyDate" required>
+            </div>
+            <div class="form-group">
+                <label for="closeDate">마감날짜</label>
+                <input type="date" id="closeDate" required>
+            </div>
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status">
+                    <option value="Qualified">Qualified</option>
+                    <option value="Applied" selected>Applied</option>
+                    <option value="X">X</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">추가</button>
+        </div>
+    </form>
+
+    <table id="jobTable">
+        <thead>
+            <tr>
+                <th>Position</th>
+                <th>Number</th>
+                <th>Grade</th>
+                <th>Location</th>
+                <th>지원날짜</th>
+                <th>마감날짜</th>
+                <th>Status</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody id="jobList">
+            </tbody>
+    </table>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } 
+    from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    // ✅ 주의: 아래 객체를 본인의 Firebase 콘솔에서 복사한 firebaseConfig로 교체하십시오.
+    const firebaseConfig = {
+        apiKey: "AIzaSyDyaYdx60wXG57PmPsmxSGwgSErBbmSe0Y",
+        authDomain: "job-tracker---kch.firebaseapp.com",
+        projectId: "job-tracker---kch",
+        storageBucket: "job-tracker---kch.firebasestorage.app",
+        messagingSenderId: "1006088446218",
+        appId: "1:1006088446218:web:1ca5c4bd20faa04bbc1af3"
+    };
+
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const jobsCollection = collection(db, "usBaseJobs");
+
+    let jobs = []; // DB에서 불러온 데이터를 담을 배열
+    const jobList = document.getElementById('jobList');
+
+    function getStatusClass(status) {
+        switch(status) {
+            case 'Applied': return 'status-applied';
+            case 'Qualified': return 'status-qualified';
+            case 'X': return 'status-x';
+            default: return '';
+        }
+    }
+
+    // 렌더링 함수 (기존 로직 동일 유지)
+    function renderJobs() {
+        jobList.innerHTML = '';
+        const statusOrder = ['Qualified', 'Applied', 'X'];
+        let isFirstGroup = true;
+        
+        statusOrder.forEach(currentStatus => {
+            const groupJobs = jobs.filter(job => job.status === currentStatus);
+            
+            if (groupJobs.length > 0) {
+                // 지원날짜 기준 오름차순 정렬
+                groupJobs.sort((a, b) => new Date(a.applyDate) - new Date(b.applyDate));
+
+                if (!isFirstGroup) {
+                    const spacerRow = document.createElement('tr');
+                    spacerRow.className = 'spacer-row';
+                    spacerRow.innerHTML = `<td colspan="8"></td>`;
+                    jobList.appendChild(spacerRow);
+                }
+                isFirstGroup = false;
+
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = `<td colspan="8" class="section-header">${currentStatus}</td>`;
+                jobList.appendChild(headerRow);
+
+                groupJobs.forEach(job => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${job.position}</td>
+                        <td>${job.number}</td>
+                        <td>${job.grade}</td>
+                        <td>${job.location}</td>
+                        <td>${job.applyDate}</td>
+                        <td>${job.closeDate}</td>
+                        <td>
+                            <select class="status-select ${getStatusClass(job.status)}" data-id="${job.id}">
+                                <option value="Qualified" ${job.status === 'Qualified' ? 'selected' : ''}>Qualified</option>
+                                <option value="Applied" ${job.status === 'Applied' ? 'selected' : ''}>Applied</option>
+                                <option value="X" ${job.status === 'X' ? 'selected' : ''}>X</option>
+                            </select>
+                        </td>
+                        <td><button class="btn-delete" data-id="${job.id}">삭제</button></td>
+                    `;
+                    jobList.appendChild(row);
+                });
+            }
+        });
+
+        // 상태 변경 이벤트 리스너 부착
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', async function() {
+                const docId = this.getAttribute('data-id');
+                const newStatus = this.value;
+                await updateDoc(doc(db, "usBaseJobs", docId), { status: newStatus });
+            });
+        });
+
+        // 삭제 버튼 이벤트 리스너 부착
+        document.querySelectorAll('.btn-delete').forEach(button => {
+            button.addEventListener('click', async function() {
+                const docId = this.getAttribute('data-id');
+                await deleteDoc(doc(db, "usBaseJobs", docId));
+            });
+        });
+    }
+
+    // 실시간 데이터 수신 (onSnapshot)
+    onSnapshot(jobsCollection, (snapshot) => {
+        jobs = [];
+        snapshot.forEach((doc) => {
+            jobs.push({ id: doc.id, ...doc.data() });
+        });
+        renderJobs();
+    });
+
+    // 데이터 추가 로직
+    document.getElementById('jobForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const newJob = {
+            position: document.getElementById('position').value,
+            number: document.getElementById('number').value,
+            grade: document.getElementById('grade').value,
+            location: document.getElementById('location').value,
+            applyDate: document.getElementById('applyDate').value,
+            closeDate: document.getElementById('closeDate').value,
+            status: document.getElementById('status').value
+        };
+
+        // Firestore에 데이터 전송
+        await addDoc(jobsCollection, newJob);
+        
+        this.reset();
+        document.getElementById('grade').value = "KGS-5";
+        document.getElementById('location').value = "평택 (Humphreys)";
+        document.getElementById('status').value = "Applied";
+    });
+</script>
+
+</body>
+</html>
